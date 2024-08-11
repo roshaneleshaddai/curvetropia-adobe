@@ -1,4 +1,4 @@
-> Curvetropia: Regularization and Symmetry Detection of Shapes
+Curvetropia: Regularization and Symmetry Detection of Shapes
 In this project, Curvetropia, we tackle the challenge of regularizing and identifying symmetrical shapes from a given set of fragmented SVG paths. This is a critical task in various fields, such as computer vision, graphic design, and CAD systems, where precise shape recognition and regularization are essential.
 
 Project Overview
