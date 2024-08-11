@@ -24,7 +24,7 @@ def detect_shapes(image_path):
     edges = cv2.Canny(blurred, 50, 150)
 
     # Find contours
-    contours, _ = cv2.findContours(edges.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(edges.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # Create an image for results
     result_image = np.zeros_like(image)
@@ -36,18 +36,28 @@ def detect_shapes(image_path):
     regularized_count = 0
 
     for contour in contours:
+        # Create a mask for the current contour
+        mask = np.zeros_like(gray)
+        cv2.drawContours(mask, [contour], -1, 255, cv2.FILLED)
+
         # Regularize the shape (approximate to a polygon)
-        epsilon = 0.01 * cv2.arcLength(contour, True)  # Adjusted epsilon for better approximation
+        epsilon = 0.01 * cv2.arcLength(contour, True)  # Reduced epsilon for better approximation
         approx_curve = cv2.approxPolyDP(contour, epsilon, True)
 
-        # Draw the approximated (regularized) curve
-        cv2.drawContours(result_image, [approx_curve], -1, (255, 255, 255), 2)
+        # Draw the approximated (regularized) curve on the mask
+        cv2.drawContours(mask, [approx_curve], -1, 255, cv2.FILLED)
+
+        # Find the contours of the regularized shape
+        regularized_contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Draw the regularized contours on the result image
+        cv2.drawContours(result_image, regularized_contours, -1, (255, 255, 255), 2)
         regularized_count += 1
 
         # Check for symmetry by flipping the ROI
         x, y, w, h = cv2.boundingRect(approx_curve)
         roi = gray[y:y+h, x:x+w]
-
+        
         # Ensure the ROI is not empty
         if roi.size == 0:
             continue
@@ -60,18 +70,17 @@ def detect_shapes(image_path):
 
         if horizontal_symmetry > 0.9 or vertical_symmetry > 0.9:
             symmetric_count += 1
-            cv2.drawContours(result_image, [approx_curve], -1, (0, 255, 0), 2)
-
-        # Create a mask for the current contour
-        mask = np.zeros_like(gray)
-        cv2.drawContours(mask, [contour], -1, 255, thickness=cv2.FILLED)
+            cv2.drawContours(result_image, regularized_contours, -1, (0, 255, 0), 2)
+            cv2.drawContours(completed_image, regularized_contours, -1, (0, 255, 0), 2)
 
         # Complete incomplete curves using inpainting
+        mask = np.zeros_like(gray)
+        cv2.drawContours(mask, regularized_contours, -1, 255, 1)
         completed_image = cv2.inpaint(completed_image, mask, inpaintRadius=10, flags=cv2.INPAINT_TELEA)
         completed_count += 1
 
     # Smooth the contours in the result image
-    smoothed_result_image = smooth_contours(result_image, [contour for contour in contours])
+    smoothed_result_image = smooth_contours(result_image, regularized_contours)
 
     # Print the number of symmetric, completed, and regularized shapes
     print(f"Number of symmetric shapes detected: {symmetric_count}")
