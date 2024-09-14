@@ -16,4 +16,6 @@ Regularization: Applying techniques like polyline compression and smoothing with
 This method focuses on identifying isolated shapes within a cluttered environment. The approach combines clustering algorithms (like DBSCAN) and shape analysis to separate individual shapes from overlapping or connected ones. Once isolated, each shape undergoes a regularization process to achieve a more precise geometric representation.
 
 
-
+## Contributors
+- M. Eleshaddai Roshan
+- G. Sreeja
